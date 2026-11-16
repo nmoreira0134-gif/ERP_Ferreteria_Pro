@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAMBO ERP SOLUTIONS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200 font-sans min-h-screen flex flex-col">
+    
+    <!-- Menú de navegación con Dropdowns -->
+    <nav class="bg-slate-900 text-white shadow-2xl relative z-50">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            
+            <!-- LOGO DE LA EMPRESA -->
+            <a href="/" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="Mambo Logo" class="h-10 w-auto rounded object-contain bg-white p-1">
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-tight text-white leading-tight">MAMBO</span>
+                    <span class="text-[10px] font-bold tracking-widest text-emerald-400 uppercase leading-tight">ERP Solutions</span>
+                </div>
+            </a>
+            
+            <!-- Contenedor de los Menús -->
+            <div class="flex space-x-8 items-center">
+                <!-- MENÚ 1: INVENTARIO -->
+                <div class="relative group">
+                    <button class="hover:text-emerald-400 font-medium py-2 flex items-center gap-1 focus:outline-none transition-colors">
+                        Inventario <span class="text-[10px]">▼</span>
+                    </button>
+                    <div class="absolute left-0 mt-1 w-48 bg-slate-800 rounded-md shadow-xl hidden group-hover:block transition-all border border-slate-700">
+                        <a href="/productos" class="block px-4 py-2 hover:bg-slate-700 rounded-t-md">📦 Productos</a>
+                        <a href="/proveedores" class="block px-4 py-2 hover:bg-slate-700 rounded-b-md">🏢 Proveedores</a>
+                    </div>
+                </div>
+
+                <!-- MENÚ 2: VENTAS -->
+                <div class="relative group">
+                    <button class="hover:text-emerald-400 font-medium py-2 flex items-center gap-1 focus:outline-none transition-colors">
+                        Ventas <span class="text-[10px]">▼</span>
+                    </button>
+                    <div class="absolute left-0 mt-1 w-48 bg-slate-800 rounded-md shadow-xl hidden group-hover:block transition-all border border-slate-700">
+                        <a href="/clientes" class="block px-4 py-2 hover:bg-slate-700 rounded-t-md">👤 Clientes</a>
+                        
+                        <!-- INICIO NUEVO: Enlace a Facturación -->
+                        <a href="{{ url_for('facturacion.lista') }}" class="block px-4 py-2 hover:bg-slate-700 rounded-b-md border-t border-slate-700">🧾 Facturación</a>
+                        <!-- FIN NUEVO -->
+
+                    </div>
+                </div>
+
+                <!-- MENÚ 3: RRHH -->
+                <div class="relative group">
+                    <button class="hover:text-emerald-400 font-medium py-2 flex items-center gap-1 focus:outline-none transition-colors">
+                        RRHH <span class="text-[10px]">▼</span>
+                    </button>
+                    <div class="absolute left-0 mt-1 w-48 bg-slate-800 rounded-md shadow-xl hidden group-hover:block transition-all border border-slate-700">
+                        <a href="/empleados" class="block px-4 py-2 hover:bg-slate-700 rounded-t-md">👥 Empleados</a>
+                        <a href="/puestos" class="block px-4 py-2 hover:bg-slate-700 rounded-b-md">🏢 Puestos</a>
+                    </div>
+                </div>
+
+                <!-- MENÚ 4: ADMINISTRACIÓN -->
+                <div class="relative group">
+                    <button class="hover:text-emerald-400 font-medium py-2 flex items-center gap-1 focus:outline-none transition-colors">
+                        Administración <span class="text-[10px]">▼</span>
+                    </button>
+                    <div class="absolute right-0 mt-1 w-48 bg-slate-800 rounded-md shadow-xl hidden group-hover:block transition-all border border-slate-700">
+                        <a href="/gastos" class="block px-4 py-2 hover:bg-slate-700 rounded-t-md">💰 Gastos</a>
+                        <a href="/usuarios" class="block px-4 py-2 hover:bg-slate-700 rounded-b-md">🔐 Usuarios</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido dinámico -->
+    <main class="flex-grow container mx-auto p-6 mt-6">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="text-center text-slate-500 pb-6 mt-auto">
+        <p class="text-sm font-medium">MAMBO ERP SOLUTIONS &copy; 2026 - Todos los derechos reservados.</p>
+    </footer>
+
+</body>
+</html>

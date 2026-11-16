@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto mt-10">
+    
+    <!-- Contenedor Principal con Sombra Profunda y bordes redondeados -->
+    <div class="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl border border-white/50 text-center">
+        
+        <h2 class="text-4xl font-extrabold text-slate-800 mb-3 tracking-tight">¡Bienvenido a MAMBO ERP!</h2>
+        <p class="text-lg text-slate-500 mb-10">Selecciona un módulo para comenzar a gestionar tu ferretería.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <!-- BOTÓN PRODUCTOS (Sombreado Azul) -->
+            <a href="/productos" class="group relative bg-gradient-to-br from-blue-500 to-blue-700 text-white p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                <span class="block text-5xl mb-4 group-hover:scale-110 transition-transform">📦</span>
+                <span class="text-xl font-bold block">Gestionar Productos</span>
+                <span class="text-sm text-blue-200 mt-2 block">Inventario y Precios</span>
+            </a>
+            
+            <!-- BOTÓN CLIENTES (Sombreado Verde) -->
+            <a href="/clientes" class="group relative bg-gradient-to-br from-emerald-500 to-emerald-700 text-white p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                <span class="block text-5xl mb-4 group-hover:scale-110 transition-transform">👤</span>
+                <span class="text-xl font-bold block">Gestionar Clientes</span>
+                <span class="text-sm text-emerald-200 mt-2 block">Directorio y Ventas</span>
+            </a>
+            
+            <!-- BOTÓN EMPLEADOS (Sombreado Morado) -->
+            <a href="/empleados" class="group relative bg-gradient-to-br from-purple-500 to-purple-700 text-white p-8 rounded-2xl shadow-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all duration-300 transform hover:-translate-y-2 overflow-hidden">
+                <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                <span class="block text-5xl mb-4 group-hover:scale-110 transition-transform">👥</span>
+                <span class="text-xl font-bold block">Ver Nómina</span>
+                <span class="text-sm text-purple-200 mt-2 block">Recursos Humanos</span>
+            </a>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

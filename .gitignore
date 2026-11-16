@@ -1,0 +1,19 @@
+# Entorno virtual
+venv/
+.venv/
+
+# Archivos basura de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Configuraciones locales del editor
+.vscode/
+
+# Archivos de sistema (Windows/Mac)
+.DS_Store
+Thumbs.db
+
+# Respaldos de Base de Datos (NO subir a Git)
+*.bak
+*.zip

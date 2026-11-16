@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- BARRA DE ACCIONES ESTILO ODOO -->
+<div class="bg-white border-b border-gray-300 px-6 py-3 flex justify-between items-center shadow-sm mb-6">
+    <div class="flex items-center text-sm text-gray-500">
+        <a href="/" class="hover:text-blue-600">Inicio</a>
+        <span class="mx-2">/</span>
+        <a href="{{ url_for('clientes.lista') }}" class="hover:text-blue-600">Clientes</a>
+        <span class="mx-2">/</span>
+        <span class="font-bold text-gray-800">Nuevo Cliente</span>
+    </div>
+    <div class="flex space-x-2">
+        <a href="{{ url_for('clientes.lista') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">
+            Descartar
+        </a>
+        <!-- Este botón envía el formulario de abajo -->
+        <button type="submit" form="form-cliente" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 shadow">
+            Guardar
+        </button>
+    </div>
+</div>
+
+<!-- FORMULARIO PRINCIPAL -->
+<div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md border border-gray-200">
+    
+    <!-- Mensajes Flash (Éxito/Error) -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="mb-4 p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form id="form-cliente" method="POST" action="{{ url_for('clientes.nuevo') }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- COLUMNA IZQUIERDA: Información Principal -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Nombre Completo *</label>
+                    <input type="text" name="nombre" required class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Teléfono</label>
+                    <input type="text" name="telefono" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Correo Electrónico</label>
+                    <input type="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                </div>
+            </div>
+
+            <!-- COLUMNA DERECHA: Detalles Adicionales -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Género</label>
+                    <select name="genero" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                        <option value="">Seleccione...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                    </select>
+                </div>
+                
+                <!-- Simulamos un Smart Button de Odoo -->
+                <div class="bg-gray-50 p-4 rounded border border-gray-200 mt-8">
+                    <p class="text-sm text-gray-500 text-center">
+                        <strong>Nota:</strong> Una vez guardado, podrás ver el historial de facturas de este cliente aquí.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

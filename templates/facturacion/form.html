@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto mt-6 bg-white shadow-md rounded-lg overflow-hidden">
+    <div class="px-6 py-3 bg-gray-50 border-b border-gray-200 text-sm flex justify-between items-center">
+        <div><a href="/" class="text-blue-600 hover:underline">Inicio</a> / <span class="font-semibold">Facturación</span> / Nueva</div>
+        <div class="flex gap-4">
+            <span class="font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">Próxima: {{ proxima_factura.formateado if proxima_factura else 'Error' }}</span>
+            <span class="font-bold text-blue-700 bg-blue-100 px-3 py-1 rounded-full">TC: {{ cfg.TipoCambio }} NIO/USD</span>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('facturacion.nueva') }}" class="p-6">
+        <div class="flex justify-end space-x-3 mb-6">
+            <a href="{{ url_for('facturacion.lista') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Cancelar</a>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold shadow">Emitir Factura</button>
+        </div>
+
+        <!-- Cliente y Vendedor -->
+        <div class="grid grid-cols-2 gap-6 mb-8">
+            <div>
+                <label class="block text-sm font-medium mb-1">Cliente</label>
+                <select name="cliente_id" required class="w-full border-gray-300 rounded-md p-2 border">
+                    <option value="">Seleccione cliente...</option>
+                    {% for c in clientes %}<option value="{{ c.ClienteID }}">{{ c.Nombre }}</option>{% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Vendedor</label>
+                <select name="empleado_id" required class="w-full border-gray-300 rounded-md p-2 border">
+                    <option value="">Seleccione vendedor...</option>
+                    {% for e in empleados %}<option value="{{ e.EmpleadoID }}">{{ e.Nombre }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Carrito de Productos -->
+        <div class="border-t pt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Líneas de Factura</h3>
+                <button type="button" onclick="agregarFila()" class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200 font-bold">+ Agregar Producto</button>
+            </div>
+            
+            <table class="w-full text-left mb-4" id="tabla-productos">
+                <thead>
+                    <tr class="text-sm text-gray-600 border-b">
+                        <th class="pb-2">Producto</th>
+                        <th class="pb-2 w-24">Cantidad</th>
+                        <th class="pb-2 w-24">Precio</th>
+                        <th class="pb-2 w-24">Subtotal</th>
+                        <th class="pb-2 w-10"></th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla">
+                    <!-- Fila inicial -->
+                    <tr>
+                        <td class="py-2 pr-2">
+                            <select name="producto_id[]" required class="w-full border-gray-300 rounded-md p-2 border text-sm" onchange="calcularTotales()">
+                                <option value="">Seleccione producto...</option>
+                                {% for p in productos %}
+                                    <option value="{{ p.ProductoID }}" data-precio="{{ p.PrecioUnitario }}">{{ p.Nombre }} ({{ p.UnidadMedida }})</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td class="py-2 px-1">
+                            <input type="number" step="0.01" name="cantidad[]" required value="1" class="w-full border-gray-300 rounded-md p-2 border text-sm text-right" oninput="calcularTotales()">
+                        </td>
+                        <td class="py-2 px-1 text-right text-sm font-semibold text-gray-600" id="precio-visual">0.00</td>
+                        <td class="py-2 px-1 text-right text-sm font-semibold text-gray-800" id="subtotal-visual">0.00</td>
+                        <td class="py-2 text-center"><button type="button" onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 font-bold">&times;</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totales Globales -->
+        <div class="flex justify-end mt-6 border-t pt-4">
+            <div class="w-1/3 text-right">
+                <div class="flex justify-between py-1 text-gray-600 text-sm"><span>Subtotal:</span> <span id="lbl-subtotal">C$ 0.00</span></div>
+                <div class="flex justify-between py-1 text-gray-600 text-sm"><span>IVA ({{ cfg.IVA*100 }}%):</span> <span id="lbl-iva">C$ 0.00</span></div>
+                <div class="flex justify-between py-2 text-xl font-bold text-gray-800 border-t"><span>Total:</span> <span id="lbl-total">C$ 0.00</span></div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    const IVA_RATE = {{ cfg.IVA }};
+
+    function agregarFila() {
+        const tbody = document.getElementById('cuerpo-tabla');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="py-2 pr-2">
+                <select name="producto_id[]" required class="w-full border-gray-300 rounded-md p-2 border text-sm" onchange="calcularTotales()">
+                    <option value="">Seleccione producto...</option>
+                    {% for p in productos %}
+                        <option value="{{ p.ProductoID }}" data-precio="{{ p.PrecioUnitario }}">{{ p.Nombre }} ({{ p.UnidadMedida }})</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td class="py-2 px-1"><input type="number" step="0.01" name="cantidad[]" required value="1" class="w-full border-gray-300 rounded-md p-2 border text-sm text-right" oninput="calcularTotales()"></td>
+            <td class="py-2 px-1 text-right text-sm font-semibold text-gray-600" id="precio-visual">0.00</td>
+            <td class="py-2 px-1 text-right text-sm font-semibold text-gray-800" id="subtotal-visual">0.00</td>
+            <td class="py-2 text-center"><button type="button" onclick="eliminarFila(this)" class="text-red-500 hover:text-red-700 font-bold">&times;</button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+
+    function eliminarFila(btn) {
+        const filas = document.querySelectorAll('#cuerpo-tabla tr');
+        if (filas.length > 1) {
+            btn.closest('tr').remove();
+            calcularTotales();
+        } else {
+            alert("Debe haber al menos una línea.");
+        }
+    }
+
+    function calcularTotales() {
+        let subtotalGlobal = 0;
+        const filas = document.querySelectorAll('#cuerpo-tabla tr');
+
+        filas.forEach(fila => {
+            const select = fila.querySelector('select');
+            const cantidadInput = fila.querySelector('input[name="cantidad[]"]');
+            const precioVis = fila.querySelector('#precio-visual');
+            const subtotalVis = fila.querySelector('#subtotal-visual');
+
+            const opcion = select.options[select.selectedIndex];
+            const precio = parseFloat(opcion.getAttribute('data-precio')) || 0;
+            const cantidad = parseFloat(cantidadInput.value) || 0;
+
+            const subtotalLinea = precio * cantidad;
+            subtotalGlobal += subtotalLinea;
+
+            precioVis.textContent = precio.toFixed(2);
+            subtotalVis.textContent = subtotalLinea.toFixed(2);
+        });
+
+        const iva = subtotalGlobal * IVA_RATE;
+        const total = subtotalGlobal + iva;
+
+        document.getElementById('lbl-subtotal').textContent = `C$ ${subtotalGlobal.toFixed(2)}`;
+        document.getElementById('lbl-iva').textContent = `C$ ${iva.toFixed(2)}`;
+        document.getElementById('lbl-total').textContent = `C$ ${total.toFixed(2)}`;
+    }
+
+    // Inicializar el primer cálculo
+    calcularTotal();
+</script>
+{% endblock %}
