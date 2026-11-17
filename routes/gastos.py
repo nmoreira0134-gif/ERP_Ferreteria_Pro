@@ -1,24 +1,16 @@
 from flask import Blueprint, render_template
-from database import get_connection
+from models import Gasto
 
-bp_gastos = Blueprint('gastos', __name__)
+# AQUI ESTABA EL ERROR: Faltaba el url_prefix
+bp_gastos = Blueprint('gastos', __name__, url_prefix='/gastos')
 
 @bp_gastos.route('/')
 def lista():
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        
-        # Consulta a la tabla Gastos, ordenada por la más reciente
-        cursor.execute("""
-            SELECT GastoID, CONVERT(varchar, Fecha, 103) AS Fecha, 
-                   Categoria, Descripcion, Monto, MetodoPago, Proveedor
-            FROM Gastos 
-            ORDER BY Fecha DESC
-        """)
-        gastos = cursor.fetchall()
-        conn.close()
-        
+        # SQLAlchemy hace la consulta mágicamente sin escribir SQL
+        gastos = Gasto.query.order_by(Gasto.Fecha.desc()).all()
         return render_template('gastos/lista.html', gastos=gastos)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return f"Error en la base de datos: {e}"

@@ -1,55 +1,55 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Gestión de Empleados</h1>
-        <a href="{{ url_for('empleados.crear') }}" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
-            Nuevo Empleado
-        </a>
-    </div>
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">👥 Nómina de Empleados</h2>
+    <a href="{{ url_for('empleados.crear') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded shadow transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Nuevo Empleado
+    </a>
+</div>
 
-    <form method="GET" action="{{ url_for('empleados.lista') }}" class="mb-4 flex">
-        <input type="text" name="busqueda" value="{{ busqueda }}" placeholder="Buscar empleado..." class="border p-2 rounded-l w-full">
-        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-r">Buscar</button>
-    </form>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="mb-4 p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
-    <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
-        <table class="min-w-full w-full table-auto">
-            <thead class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                <tr>
-                    <th class="py-3 px-6 text-left">ID</th>
-                    <th class="py-3 px-6 text-left">Nombre</th>
-                    <th class="py-3 px-6 text-left">ID Puesto</th>
-                    <th class="py-3 px-6 text-left">Salario Base</th>
-                    <th class="py-3 px-6 text-center">Estado</th>
-                    <th class="py-3 px-6 text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-600 text-sm font-light">
-                {% for emp in empleados %}
-                <tr class="border-b border-gray-200 hover:bg-gray-100">
-                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ emp.EmpleadoID }}</td>
-                    <td class="py-3 px-6 text-left">{{ emp.Nombre }}</td>
-                    <td class="py-3 px-6 text-left">{{ emp.PuestoID or '-' }}</td>
-                    <td class="py-3 px-6 text-left">${{ emp.SalarioBase or '0.00' }}</td>
-                    <td class="py-3 px-6 text-center">
-                        {% if emp.Activo %}
-                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Activo</span>
-                        {% else %}
-                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Inactivo</span>
-                        {% endif %}
-                    </td>
-                    <td class="py-3 px-6 text-center">
-                        <div class="flex item-center justify-center space-x-2">
-                            <a href="{{ url_for('empleados.editar', id=emp.EmpleadoID) }}" class="text-blue-600 hover:text-blue-900 font-bold">Editar</a>
-                            <a href="{{ url_for('empleados.eliminar', id=emp.EmpleadoID) }}" class="text-red-600 hover:text-red-900 font-bold" onclick="return confirm('¿Eliminar empleado?')">Eliminar</a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Puesto</th>
+                <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Salario</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for emp in empleados %}
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emp.EmpleadoID }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ emp.Nombre }}</td>
+                <!-- Usamos la relación del modelo para traer el nombre del puesto -->
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emp.puesto.Nombre if emp.puesto else 'Sin puesto' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-emerald-600 font-bold">C$ {{ "%.2f"|format(emp.SalarioBase) if emp.SalarioBase else '0.00' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{{ emp.FechaContratacion.strftime('%d/%m/%Y') if emp.FechaContratacion else 'N/A' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                    {% if emp.Activo %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay empleados registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

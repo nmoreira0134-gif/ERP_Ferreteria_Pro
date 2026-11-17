@@ -3,11 +3,19 @@
 {% block content %}
 <div class="flex justify-between items-center mb-6">
     <h2 class="text-2xl font-bold text-gray-800">🏢 Catálogo de Puestos</h2>
-    <a href="{{ url_for('puestos.nuevo') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded shadow transition-colors flex items-center gap-2">
+    <a href="{{ url_for('puestos.crear') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded shadow transition-colors flex items-center gap-2">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Nuevo Puesto
     </a>
 </div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="mb-4 p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
 <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
     <table class="min-w-full divide-y divide-gray-200">
@@ -22,10 +30,10 @@
         <tbody class="bg-white divide-y divide-gray-200">
             {% for p in puestos %}
             <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p[0] }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ p[1] }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p[3] if p[3] else 'Sin descripción' }}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-emerald-600 font-bold">C$ {{ "%.2f"|format(p[2]) }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.PuestoID }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ p.Nombre }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ p.Descripcion if p.Descripcion else 'Sin descripción' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-emerald-600 font-bold">C$ {{ "%.2f"|format(p.SalarioBase) if p.SalarioBase else '0.00' }}</td>
             </tr>
             {% else %}
             <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">No hay puestos registrados.</td></tr>

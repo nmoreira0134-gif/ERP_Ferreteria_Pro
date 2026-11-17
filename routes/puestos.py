@@ -1,37 +1,35 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from database import get_connection
+from models import db, Puesto
+import traceback
 
-bp_puestos = Blueprint('puestos', __name__)
+bp_puestos = Blueprint('puestos', __name__, url_prefix='/puestos')
 
 @bp_puestos.route('/')
 def lista():
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT PuestoID, Nombre, SalarioBase, Descripcion FROM Puestos ORDER BY Nombre")
-        puestos = cursor.fetchall()
-        conn.close()
+        puestos = Puesto.query.order_by(Puesto.Nombre).all()
+        # AQUI ESTABA EL ERROR: Ahora busca lista.html (con "a")
         return render_template('puestos/lista.html', puestos=puestos)
     except Exception as e:
+        traceback.print_exc()
         return f"Error en la base de datos: {e}"
 
-@bp_puestos.route('/nuevo', methods=['GET', 'POST'])
-def nuevo():
+@bp_puestos.route('/crear', methods=['GET', 'POST'])
+def crear():
     if request.method == 'POST':
-        nombre = request.form.get('nombre')
-        salario = request.form.get('salario')
-        descripcion = request.form.get('descripcion')
-
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO Puestos (Nombre, SalarioBase, Descripcion) VALUES (?, ?, ?)", (nombre, salario, descripcion))
-            conn.commit()
-            conn.close()
-            flash('¡Puesto registrado exitosamente!', 'success')
+            nuevo = Puesto(
+                Nombre=request.form['nombre'],
+                SalarioBase=request.form['salario'],
+                Descripcion=request.form.get('descripcion', '')
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            flash('Puesto registrado exitosamente.', 'success')
             return redirect(url_for('puestos.lista'))
         except Exception as e:
-            flash(f'Error al guardar: {e}', 'error')
-            return redirect(url_for('puestos.nuevo'))
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al guardar: {str(e)}", "danger")
 
     return render_template('puestos/form.html')
