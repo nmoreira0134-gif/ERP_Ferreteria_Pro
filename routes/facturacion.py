@@ -1,8 +1,3 @@
-# ============================================================================
-# MAMBO ERP SOLUTIONS
-# Archivo: routes/facturacion.py
-# ============================================================================
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database import get_connection
 from models.configuracion import Configuracion
@@ -18,9 +13,11 @@ def lista():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT f.FacturaID, f.NumeroFactura, f.FechaEmision, c.Nombre AS Cliente, f.Total, f.Estado
+            SELECT f.FacturaID, f.NumeroFactura, f.FechaEmision, 
+                   ISNULL(c.Nombre, 'Cliente Borrado') AS Cliente, 
+                   f.Total, f.Estado
             FROM Facturas f
-            INNER JOIN Clientes c ON f.ClienteID = c.ClienteID
+            LEFT JOIN Clientes c ON f.ClienteID = c.ClienteID
             ORDER BY f.FacturaID DESC
         """)
         facturas = cursor.fetchall()
@@ -28,7 +25,7 @@ def lista():
         return render_template('facturacion/list.html', facturas=facturas)
     except Exception as e:
         traceback.print_exc()
-        flash(f'Error: {e}', 'error')
+        flash(f'Error al cargar lista: {e}', 'error')
         return redirect(url_for('main.index'))
 
 @bp_facturacion.route('/nueva', methods=['GET', 'POST'])
@@ -59,6 +56,18 @@ def nueva():
                 cantidad = Decimal(cant_str)
                 if cantidad <= 0: continue
 
+                # 1. VALIDACIÓN DE STOCK (Usando el Kardex real)
+                cursor.execute("""
+                    SELECT ISNULL(SUM(Cantidad), 0) 
+                    FROM MovimientosInventario 
+                    WHERE ProductoID = ?
+                """, (prod_id,))
+                stock_row = cursor.fetchone()
+                stock_actual = Decimal(str(stock_row[0])) if stock_row else Decimal('0.00')
+                
+                if stock_actual < cantidad:
+                    raise ValueError(f"Stock insuficiente. Solo hay {stock_actual} unidades disponibles para este producto.")
+
                 cursor.execute("SELECT PrecioUnitario FROM Productos WHERE ProductoID = ?", (prod_id,))
                 prod_row = cursor.fetchone()
                 if not prod_row: raise ValueError(f"Producto ID {prod_id} no encontrado.")
@@ -66,11 +75,6 @@ def nueva():
                 precio_unitario = Decimal(str(prod_row[0]))
                 subtotal_linea = cantidad * precio_unitario
                 subtotal_global += subtotal_linea
-
-                cursor.execute("""
-                    UPDATE Inventario SET CantidadDisponible = CantidadDisponible - ? 
-                    WHERE ProductoID = ?
-                """, (cantidad, prod_id))
 
                 lineas_a_insertar.append((prod_id, cantidad, precio_unitario, subtotal_linea))
 
@@ -94,14 +98,21 @@ def nueva():
             factura_id = cursor.fetchone()[0]
 
             for linea in lineas_a_insertar:
+                # 3. INSERTAR DETALLE DE LA FACTURA
                 cursor.execute("""
                     INSERT INTO FacturaDetalle (FacturaID, ProductoID, Cantidad, PrecioUnitario, SubtotalLinea)
                     VALUES (?, ?, ?, ?, ?)
                 """, (factura_id, linea[0], linea[1], linea[2], linea[3]))
+                
+                # 4. REGISTRAR EN EL KARDEX (Cantidad negativa para que reste en la suma)
+                cursor.execute("""
+                    INSERT INTO MovimientosInventario (ProductoID, TipoMovimiento, Cantidad, Referencia, Usuario, Fecha)
+                    VALUES (?, 'Salida', ?, ?, ?, GETDATE())
+                """, (linea[0], -linea[1], num_factura, 'Admin'))
 
             conn.commit()
             conn.close()
-            flash(f'¡Factura {num_factura} generada con éxito!', 'success')
+            flash(f'¡Factura {num_factura} generada y registrada en Kardex!', 'success')
             return redirect(url_for('facturacion.detalle', factura_id=factura_id))
 
         # --- FLUJO GET ---
@@ -109,8 +120,22 @@ def nueva():
         clientes = cursor.fetchall()
         cursor.execute("SELECT EmpleadoID, Nombre FROM Empleados WHERE Activo = 1 ORDER BY Nombre")
         empleados = cursor.fetchall()
-        cursor.execute("SELECT ProductoID, Nombre, PrecioUnitario, UnidadMedida FROM Productos ORDER BY Nombre")
+        
+        # CONSULTA CORREGIDA: Calcula el stock desde el Kardex (Suma de Cantidades)
+        cursor.execute("""
+            SELECT 
+                p.ProductoID, 
+                p.Nombre, 
+                p.PrecioUnitario, 
+                p.UnidadMedida, 
+                ISNULL(SUM(m.Cantidad), 0) AS Stock
+            FROM Productos p
+            LEFT JOIN MovimientosInventario m ON p.ProductoID = m.ProductoID
+            GROUP BY p.ProductoID, p.Nombre, p.PrecioUnitario, p.UnidadMedida
+            ORDER BY p.Nombre
+        """)
         productos = cursor.fetchall()
+        
         proxima_factura = Correlativo.peek('FAC')
         cfg = Configuracion.get()
 
@@ -131,8 +156,6 @@ def detalle(factura_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
-        # CORREGIDO: Agregado f.FacturaID al inicio del SELECT
         cursor.execute("""
             SELECT f.FacturaID, f.NumeroFactura, f.FechaEmision, c.Nombre, e.Nombre, 
                    f.Subtotal, f.IVA_Aplicado, f.MontoIVA, f.Total, f.Estado, 
@@ -169,18 +192,22 @@ def anular(factura_id):
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT Estado FROM Facturas WHERE FacturaID = ?", (factura_id,))
+        cursor.execute("SELECT NumeroFactura, Estado FROM Facturas WHERE FacturaID = ?", (factura_id,))
         row = cursor.fetchone()
-        if not row or row[0] == 'Anulada':
+        if not row or row[1] == 'Anulada':
             raise ValueError("Factura no encontrada o ya está anulada.")
+        
+        num_factura = row[0]
 
         cursor.execute("SELECT ProductoID, Cantidad FROM FacturaDetalle WHERE FacturaID = ?", (factura_id,))
         detalles = cursor.fetchall()
+        
         for d in detalles:
+            # Registrar Devolucion en Kardex (Cantidad positiva para que SUME)
             cursor.execute("""
-                UPDATE Inventario SET CantidadDisponible = CantidadDisponible + ? 
-                WHERE ProductoID = ?
-            """, (d[1], d[0]))
+                INSERT INTO MovimientosInventario (ProductoID, TipoMovimiento, Cantidad, Referencia, Usuario, Fecha)
+                VALUES (?, 'Devolucion', ?, ?, ?, GETDATE())
+            """, (d[0], d[1], f"Anulación de {num_factura}", "SYSTEM"))
 
         cursor.execute("""
             UPDATE Facturas SET Estado = 'Anulada', MotivoAnulacion = ? WHERE FacturaID = ?
@@ -188,7 +215,7 @@ def anular(factura_id):
 
         conn.commit()
         conn.close()
-        flash('Factura anulada correctamente. El stock ha sido devuelto.', 'success')
+        flash(f'Factura {num_factura} anulada. Stock devuelto y Kardex actualizado.', 'success')
         return redirect(url_for('facturacion.detalle', factura_id=factura_id))
 
     except Exception as e:

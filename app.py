@@ -1,30 +1,34 @@
-from flask import Flask, render_template
-from config import Config
-from routes.main import bp_main
-from routes.clientes import bp_clientes
-from routes.empleados import bp_empleados
-from routes.gastos import bp_gastos
-from routes.productos import bp_productos
-from routes.proveedores import bp_proveedores
-from routes.puestos import bp_puestos
-from routes.usuarios import bp_usuarios
-# NUEVO IMPORT
-from routes.facturacion import bp_facturacion 
+from flask import Flask
+from models import db
 
 app = Flask(__name__)
-app.config.from_object(Config)
 
-# Registro de Blueprints
-app.register_blueprint(bp_main)
-app.register_blueprint(bp_clientes, url_prefix='/clientes')
-app.register_blueprint(bp_empleados, url_prefix='/empleados')
-app.register_blueprint(bp_gastos, url_prefix='/gastos')
-app.register_blueprint(bp_productos, url_prefix='/productos')
-app.register_blueprint(bp_proveedores, url_prefix='/proveedores')
-app.register_blueprint(bp_puestos, url_prefix='/puestos')
-app.register_blueprint(bp_usuarios, url_prefix='/usuarios')
-# NUEVO REGISTRO
-app.register_blueprint(bp_facturacion) 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mssql+pyodbc://@localhost/FerreteriaDB?trusted_connection=yes&driver=ODBC+Driver+17+for+SQL+Server'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'mambo_erp_secret_key'
+
+db.init_app(app)
+
+# Función auxiliar para registrar módulos sin que un error detenga todo el servidor
+def registrar_modulo(nombre_archivo, nombre_blueprint):
+    try:
+        modulo = __import__(f'routes.{nombre_archivo}', fromlist=[nombre_blueprint])
+        blueprint = getattr(modulo, nombre_blueprint)
+        app.register_blueprint(blueprint)
+        print(f"✅ Módulo '{nombre_archivo}' registrado correctamente.")
+    except Exception as e:
+        print(f"❌ ERROR al registrar el módulo '{nombre_archivo}': {e}")
+
+# Registramos todos los módulos
+registrar_modulo('main', 'bp_main')
+registrar_modulo('productos', 'bp_productos')
+registrar_modulo('clientes', 'bp_clientes')
+registrar_modulo('empleados', 'bp_empleados')
+registrar_modulo('facturacion', 'bp_facturacion')
+registrar_modulo('proveedores', 'bp_proveedores')
+registrar_modulo('inventario', 'bp_inventario')
+registrar_modulo('gastos', 'bp_gastos')
+registrar_modulo('puestos', 'bp_puestos')
 
 if __name__ == '__main__':
     app.run(debug=True)

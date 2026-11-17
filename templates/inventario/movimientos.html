@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Kardex - Historial de Movimientos</h1>
+            <p class="text-sm text-gray-500">Auditoría de entradas y salidas.</p>
+        </div>
+        <div class="space-x-2">
+            <a href="{{ url_for('productos.carga_masiva') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded shadow font-medium">
+                📥 Carga Masiva
+            </a>
+            <a href="{{ url_for('inventario.lista') }}" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow font-medium">
+                Volver al Inventario
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+        <table class="min-w-full w-full table-auto">
+            <thead class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                <tr>
+                    <th class="py-3 px-6 text-left">N° Mov</th>
+                    <th class="py-3 px-6 text-left">Fecha</th>
+                    <th class="py-3 px-6 text-left">Producto</th>
+                    <th class="py-3 px-6 text-center">Tipo</th>
+                    <th class="py-3 px-6 text-center">Cant.</th>
+                    <th class="py-3 px-6 text-left">Proveedor</th>
+                    <th class="py-3 px-6 text-left">Referencia</th>
+                    <th class="py-3 px-6 text-left">Usuario</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for mov in movimientos %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ mov.MovimientoID }}</td>
+                    <td class="py-3 px-6 text-left">{{ mov.Fecha.strftime('%Y-%m-%d %H:%M') if mov.Fecha else '-' }}</td>
+                    
+                    <td class="py-3 px-6 text-left">
+                        {% if mov.producto %}
+                            <span class="font-bold">{{ mov.producto.ProductoID }}</span> - {{ mov.producto.Nombre }}
+                            <span class="text-xs text-gray-400 block">{{ mov.producto.UnidadMedida or 'UND' }}</span>
+                        {% else %}
+                            <span class="text-red-500 italic">Producto Eliminado</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td class="py-3 px-6 text-center">
+                        <span class="px-2 py-1 rounded text-xs font-bold {% if mov.TipoMovimiento == 'Entrada' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ mov.TipoMovimiento }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-6 text-center font-bold">{{ mov.Cantidad }}</td>
+                    
+                    <td class="py-3 px-6 text-left">
+                        {{ mov.proveedor.Nombre if mov.proveedor else '-' }}
+                    </td>
+                    <td class="py-3 px-6 text-left">{{ mov.Referencia or '-' }}</td>
+                    <td class="py-3 px-6 text-left">{{ mov.Usuario or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,52 +1,72 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from database import get_connection
+from models import db, Cliente
+import traceback
 
-bp_clientes = Blueprint('clientes', __name__)
+bp_clientes = Blueprint('clientes', __name__, url_prefix='/clientes')
 
 @bp_clientes.route('/')
 def lista():
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT ClienteID, Nombre, Telefono, Email, Genero 
-            FROM Clientes 
-            ORDER BY Nombre
-        """)
-        clientes = cursor.fetchall()
-        conn.close()
-        return render_template('clientes/lista.html', clientes=clientes)
+        busqueda = request.args.get('busqueda', '')
+        if busqueda:
+            clientes = Cliente.query.filter(Cliente.Nombre.contains(busqueda)).all()
+        else:
+            clientes = Cliente.query.all()
+        return render_template('clientes/list.html', clientes=clientes, busqueda=busqueda)
     except Exception as e:
-        return f"Error en la base de datos: {e}"
+        traceback.print_exc()
+        return f"Error en la base de datos al cargar clientes: {str(e)}"
 
-# NUEVA RUTA: Crear Cliente
-@bp_clientes.route('/nuevo', methods=['GET', 'POST'])
-def nuevo():
+@bp_clientes.route('/crear', methods=['GET', 'POST'])
+def crear():
     if request.method == 'POST':
-        # 1. Recibimos los datos del formulario HTML
-        nombre = request.form.get('nombre')
-        telefono = request.form.get('telefono')
-        email = request.form.get('email')
-        genero = request.form.get('genero')
-        
         try:
-            # 2. Insertamos en SQL Server
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO Clientes (Nombre, Telefono, Email, Genero) 
-                VALUES (?, ?, ?, ?)
-            """, (nombre, telefono, email, genero))
-            conn.commit()
-            conn.close()
-            
-            # 3. Mandamos mensaje de éxito y redirigimos a la lista
-            flash('¡Cliente registrado exitosamente!', 'success')
+            nuevo = Cliente(
+                Nombre=request.form['nombre'],
+                Telefono=request.form.get('telefono', ''),
+                Email=request.form.get('email', ''),
+                Genero=request.form.get('genero', '')
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            flash('Cliente creado exitosamente.', 'success')
             return redirect(url_for('clientes.lista'))
-            
         except Exception as e:
-            flash(f'Error al guardar: {e}', 'error')
-            return redirect(url_for('clientes.nuevo'))
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al crear cliente: {str(e)}", 'danger')
             
-    # Si es GET, solo mostramos el formulario vacío
-    return render_template('clientes/form.html')
+    return render_template('clientes/form.html', cliente=None)
+
+@bp_clientes.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar(id):
+    cliente = Cliente.query.get_or_404(id)
+    if request.method == 'POST':
+        try:
+            cliente.Nombre = request.form['nombre']
+            cliente.Telefono = request.form.get('telefono', '')
+            cliente.Email = request.form.get('email', '')
+            cliente.Genero = request.form.get('genero', '')
+            
+            db.session.commit()
+            flash('Cliente actualizado exitosamente.', 'success')
+            return redirect(url_for('clientes.lista'))
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al editar cliente: {str(e)}", 'danger')
+
+    return render_template('clientes/form.html', cliente=cliente)
+
+@bp_clientes.route('/eliminar/<int:id>')
+def eliminar(id):
+    try:
+        cliente = Cliente.query.get_or_404(id)
+        db.session.delete(cliente)
+        db.session.commit()
+        flash('Cliente eliminado exitosamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        traceback.print_exc()
+        flash(f"Error al eliminar cliente: {str(e)}", 'danger')
+    return redirect(url_for('clientes.lista'))

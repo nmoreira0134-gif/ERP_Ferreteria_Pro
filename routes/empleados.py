@@ -1,75 +1,81 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from database import get_connection
+from models import db, Empleado
+import traceback
+from datetime import datetime
 
-bp_empleados = Blueprint('empleados', __name__)
+bp_empleados = Blueprint('empleados', __name__, url_prefix='/empleados')
 
 @bp_empleados.route('/')
 def lista():
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT e.EmpleadoID, e.Nombre, p.Nombre AS Puesto, 
-                   e.SalarioBase, CONVERT(varchar, e.FechaContratacion, 103) AS Fecha, e.Activo
-            FROM Empleados e
-            LEFT JOIN Puestos p ON e.PuestoID = p.PuestoID
-            ORDER BY e.Nombre
-        """)
-        empleados = cursor.fetchall()
-        conn.close()
-        return render_template('empleados/lista.html', empleados=empleados)
+        busqueda = request.args.get('busqueda', '')
+        if busqueda:
+            empleados = Empleado.query.filter(Empleado.Nombre.contains(busqueda)).all()
+        else:
+            empleados = Empleado.query.all()
+        return render_template('empleados/list.html', empleados=empleados, busqueda=busqueda)
     except Exception as e:
-        return f"Error en la base de datos: {e}"
+        traceback.print_exc()
+        return f"Error en la base de datos al cargar empleados: {str(e)}"
 
-@bp_empleados.route('/nuevo', methods=['GET', 'POST'])
-def nuevo():
-    try:
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        if request.method == 'POST':
-            nombre = request.form.get('nombre')
-            puesto_id = request.form.get('puesto_id')
-            salario = request.form.get('salario')
-            fecha_contratacion = request.form.get('fecha_contratacion')
-            activo = 1 if request.form.get('activo') else 0
-
-            cursor.execute("""
-                INSERT INTO Empleados (Nombre, PuestoID, SalarioBase, FechaContratacion, Activo) 
-                VALUES (?, ?, ?, ?, ?)
-            """, (nombre, puesto_id if puesto_id else None, salario, fecha_contratacion, activo))
+@bp_empleados.route('/crear', methods=['GET', 'POST'])
+def crear():
+    if request.method == 'POST':
+        try:
+            fecha_str = request.form.get('fecha_contratacion')
+            fecha_dt = datetime.strptime(fecha_str, '%Y-%m-%d').date() if fecha_str else None
             
-            conn.commit()
-            conn.close()
-
-            flash('¡Empleado registrado exitosamente!', 'success')
+            nuevo = Empleado(
+                Nombre=request.form['nombre'],
+                PuestoID=request.form.get('puesto_id') or None,
+                SalarioBase=request.form.get('salario_base') or 0.00,
+                FechaContratacion=fecha_dt,
+                Activo=bool(request.form.get('activo'))
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            flash('Empleado creado exitosamente.', 'success')
             return redirect(url_for('empleados.lista'))
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al crear empleado: {str(e)}", 'danger')
+            
+    return render_template('empleados/form.html', empleado=None)
 
-        cursor.execute("SELECT PuestoID, Nombre FROM Puestos ORDER BY Nombre")
-        puestos = cursor.fetchall()
-        conn.close()
-        
-        return render_template('empleados/form.html', puestos=puestos)
+@bp_empleados.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar(id):
+    empleado = Empleado.query.get_or_404(id)
+    if request.method == 'POST':
+        try:
+            fecha_str = request.form.get('fecha_contratacion')
+            
+            empleado.Nombre = request.form['nombre']
+            empleado.PuestoID = request.form.get('puesto_id') or None
+            empleado.SalarioBase = request.form.get('salario_base') or 0.00
+            if fecha_str:
+                empleado.FechaContratacion = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+            empleado.Activo = bool(request.form.get('activo'))
+            
+            db.session.commit()
+            flash('Empleado actualizado exitosamente.', 'success')
+            return redirect(url_for('empleados.lista'))
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al editar empleado: {str(e)}", 'danger')
 
-    except Exception as e:
-        if 'conn' in locals():
-            conn.rollback()
-            conn.close()
-        flash(f'Error al guardar: {e}', 'error')
-        return redirect(url_for('empleados.nuevo'))
+    return render_template('empleados/form.html', empleado=empleado)
 
-# NUEVA RUTA: Dar de baja (Borrado Lógico)
-@bp_empleados.route('/baja/<int:id>')
-def baja(id):
+@bp_empleados.route('/eliminar/<int:id>')
+def eliminar(id):
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        # En lugar de DELETE, hacemos un UPDATE para ponerlo inactivo
-        cursor.execute("UPDATE Empleados SET Activo = 0 WHERE EmpleadoID = ?", (id,))
-        conn.commit()
-        conn.close()
-        flash('Empleado dado de baja correctamente. Su historial se mantiene intacto.', 'success')
+        empleado = Empleado.query.get_or_404(id)
+        db.session.delete(empleado)
+        db.session.commit()
+        flash('Empleado eliminado exitosamente.', 'success')
     except Exception as e:
-        flash(f'Error al dar de baja: {e}', 'error')
-        
+        db.session.rollback()
+        traceback.print_exc()
+        flash(f"Error al eliminar empleado: {str(e)}", 'danger')
     return redirect(url_for('empleados.lista'))

@@ -1,48 +1,72 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from database import get_connection
+from models import db, Proveedor
+import traceback
 
-bp_proveedores = Blueprint('proveedores', __name__)
+bp_proveedores = Blueprint('proveedores', __name__, url_prefix='/proveedores')
 
 @bp_proveedores.route('/')
 def lista():
     try:
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT ProveedorID, Nombre, Contacto, Telefono, Email, Direccion 
-            FROM Proveedores 
-            ORDER BY Nombre
-        """)
-        proveedores = cursor.fetchall()
-        conn.close()
-        return render_template('proveedores/lista.html', proveedores=proveedores)
+        busqueda = request.args.get('busqueda', '')
+        if busqueda:
+            proveedores = Proveedor.query.filter(Proveedor.Nombre.contains(busqueda)).all()
+        else:
+            proveedores = Proveedor.query.all()
+        return render_template('proveedores/list.html', proveedores=proveedores, busqueda=busqueda)
     except Exception as e:
-        return f"Error en la base de datos: {e}"
+        traceback.print_exc()
+        return f"Error en la base de datos al cargar proveedores: {str(e)}"
 
-@bp_proveedores.route('/nuevo', methods=['GET', 'POST'])
-def nuevo():
+@bp_proveedores.route('/crear', methods=['GET', 'POST'])
+def crear():
     if request.method == 'POST':
-        nombre = request.form.get('nombre')
-        contacto = request.form.get('contacto')
-        telefono = request.form.get('telefono')
-        email = request.form.get('email')
-        direccion = request.form.get('direccion')
-
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO Proveedores (Nombre, Contacto, Telefono, Email, Direccion) 
-                VALUES (?, ?, ?, ?, ?)
-            """, (nombre, contacto, telefono, email, direccion))
-            conn.commit()
-            conn.close()
-
-            flash('¡Proveedor registrado exitosamente!', 'success')
+            nuevo = Proveedor(
+                Nombre=request.form['nombre'],
+                Contacto=request.form.get('contacto', ''),
+                Telefono=request.form.get('telefono', ''),
+                Email=request.form.get('email', '')
+            )
+            db.session.add(nuevo)
+            db.session.commit()
+            flash('Proveedor creado exitosamente.', 'success')
             return redirect(url_for('proveedores.lista'))
-
         except Exception as e:
-            flash(f'Error al guardar: {e}', 'error')
-            return redirect(url_for('proveedores.nuevo'))
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al crear proveedor: {str(e)}", 'danger')
+            
+    return render_template('proveedores/form.html', proveedor=None)
 
-    return render_template('proveedores/form.html')
+@bp_proveedores.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar(id):
+    proveedor = Proveedor.query.get_or_404(id)
+    if request.method == 'POST':
+        try:
+            proveedor.Nombre = request.form['nombre']
+            proveedor.Contacto = request.form.get('contacto', '')
+            proveedor.Telefono = request.form.get('telefono', '')
+            proveedor.Email = request.form.get('email', '')
+            
+            db.session.commit()
+            flash('Proveedor actualizado exitosamente.', 'success')
+            return redirect(url_for('proveedores.lista'))
+        except Exception as e:
+            db.session.rollback()
+            traceback.print_exc()
+            flash(f"Error al editar proveedor: {str(e)}", 'danger')
+
+    return render_template('proveedores/form.html', proveedor=proveedor)
+
+@bp_proveedores.route('/eliminar/<int:id>')
+def eliminar(id):
+    try:
+        proveedor = Proveedor.query.get_or_404(id)
+        db.session.delete(proveedor)
+        db.session.commit()
+        flash('Proveedor eliminado exitosamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        traceback.print_exc()
+        flash(f"Error al eliminar proveedor: {str(e)}", 'danger')
+    return redirect(url_for('proveedores.lista'))
