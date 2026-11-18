@@ -161,11 +161,14 @@ def detalle(factura_id):
                    f.Subtotal, f.IVA_Aplicado, f.MontoIVA, f.Total, f.Estado, 
                    f.TipoCambio, f.MotivoAnulacion
             FROM Facturas f
-            INNER JOIN Clientes c ON f.ClienteID = c.ClienteID
+            LEFT JOIN Clientes c ON f.ClienteID = c.ClienteID
             INNER JOIN Empleados e ON f.EmpleadoID = e.EmpleadoID
             WHERE f.FacturaID = ?
         """, (factura_id,))
         factura = cursor.fetchone()
+        if not factura:
+            flash('Factura no encontrada.', 'error')
+            return redirect(url_for('facturacion.lista'))
 
         cursor.execute("""
             SELECT p.Nombre, p.UnidadMedida, d.Cantidad, d.PrecioUnitario, d.SubtotalLinea

@@ -17,3 +17,11 @@ Thumbs.db
 # Respaldos de Base de Datos (NO subir a Git)
 *.bak
 *.zip
+# Añadido por reparar_fase0.py
+*.bak.*
+*.rar
+.env
+.env.*
+!.env.example
+*.log
+.idea/

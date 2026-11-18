@@ -1,3 +1,4 @@
+import traceback
 from decimal import Decimal, InvalidOperation
 from database import get_connection
 
@@ -76,6 +77,7 @@ class Configuracion:
             _cache = None
             return True
         except Exception:
+            traceback.print_exc()
             conn.rollback()
             raise
         finally:

@@ -1,5 +1,7 @@
+import os
+
 class Config:
-    SECRET_KEY = 'clave-secreta-para-desarrollo-local'
+    SECRET_KEY = os.getenv('SECRET_KEY','dev-insecure-key')
     DB_DRIVER = "{ODBC Driver 18 for SQL Server}"
     DB_SERVER = "localhost" 
     DB_DATABASE = "FerreteriaDB"

@@ -41,7 +41,7 @@
                     <td class="py-3 px-6 text-left">{{ producto.Nombre }}</td>
                     <td class="py-3 px-6 text-left">{{ producto.SKU }}</td>
                     <td class="py-3 px-6 text-left">{{ producto.UnidadMedida or '-' }}</td>
-                    <td class="py-3 px-6 text-left">${{ producto.PrecioUnitario }}</td>
+                    <td class="py-3 px-6 text-left">C$ {{ "%.2f"|format(producto.PrecioUnitario) }}</td>
                     <td class="py-3 px-6 text-center">
                         <div class="flex item-center justify-center space-x-2">
                             <a href="{{ url_for('productos.editar', id=producto.ProductoID) }}" class="text-blue-600 hover:text-blue-900 font-bold">Editar</a>

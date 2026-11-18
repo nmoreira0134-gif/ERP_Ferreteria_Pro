@@ -42,7 +42,8 @@ def lista():
 def crear():
     try:
         proveedores = Proveedor.query.all()
-    except:
+    except Exception:
+        traceback.print_exc()
         proveedores = []
         
     if request.method == 'POST':
@@ -72,7 +73,8 @@ def editar(id):
     producto = Producto.query.get_or_404(id)
     try:
         proveedores = Proveedor.query.all()
-    except:
+    except Exception:
+        traceback.print_exc()
         proveedores = []
 
     if request.method == 'POST':

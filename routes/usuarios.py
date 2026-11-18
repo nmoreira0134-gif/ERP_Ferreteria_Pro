@@ -1,7 +1,8 @@
+import traceback
 from flask import Blueprint, render_template
 from database import get_connection
 
-bp_usuarios = Blueprint('usuarios', __name__)
+bp_usuarios = Blueprint('usuarios', __name__, url_prefix='/usuarios')
 
 @bp_usuarios.route('/')
 def lista():
@@ -20,4 +21,5 @@ def lista():
         
         return render_template('usuarios/lista.html', usuarios=usuarios)
     except Exception as e:
+        traceback.print_exc()
         return f"Error en la base de datos: {e}"
