@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-6 bg-white shadow-md rounded-lg p-8">
+    
+    {% if factura[9] == 'Anulada' %}
+    <div class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+        <p class="font-bold">FACTURA ANULADA</p>
+        <p class="text-sm">Motivo: {{ factura[11] }}</p>
+    </div>
+    {% endif %}
+
+    <div class="flex justify-between items-start border-b pb-6 mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Factura</h1>
+            <p class="text-gray-500 font-semibold text-lg">{{ factura[1] }}</p>
+        </div>
+        <div class="text-right">
+            <p class="text-sm text-gray-500">Fecha de Emisión</p>
+            <p class="font-bold">{{ factura[2].strftime('%Y-%m-%d %H:%M') }}</p>
+            <p class="text-sm mt-1 text-gray-500">Tipo de Cambio: <span class="font-semibold text-gray-800">{{ factura[10] }}</span></p>
+            <p class="text-sm mt-2 text-gray-500">Estado</p>
+            <span class="px-3 py-1 text-sm rounded-full {{ 'bg-green-100 text-green-700' if factura[9] == 'Emitida' else 'bg-red-100 text-red-700' }}">
+                {{ factura[9] }}
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6 mb-8">
+        <div>
+            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Cliente</p>
+            <p class="text-lg text-gray-800">{{ factura[3] }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-gray-500 uppercase font-bold mb-1">Vendedor</p>
+            <p class="text-lg text-gray-800">{{ factura[4] }}</p>
+        </div>
+    </div>
+
+    <table class="w-full text-left mb-8 border-collapse">
+        <thead class="bg-gray-100 text-gray-600 text-sm">
+            <tr>
+                <th class="p-3 border-b">Producto</th>
+                <th class="p-3 border-b text-right">Cantidad</th>
+                <th class="p-3 border-b text-right">Precio Unit.</th>
+                <th class="p-3 border-b text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in detalles %}
+            <tr>
+                <td class="p-3 border-b">{{ d[0] }}</td>
+                <td class="p-3 border-b text-right">{{ "%.2f"|format(d[2]) }} {{ d[1] }}</td>
+                <td class="p-3 border-b text-right">C$ {{ "%.2f"|format(d[3]) }}</td>
+                <td class="p-3 border-b text-right font-semibold">C$ {{ "%.2f"|format(d[4]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="flex justify-end border-b pb-6">
+        <div class="w-1/2">
+            <div class="flex justify-between py-2 border-b text-gray-600 text-sm">
+                <span>Subtotal:</span>
+                <span>C$ {{ "%.2f"|format(factura[5]) }}</span>
+            </div>
+            <div class="flex justify-between py-2 border-b text-gray-600 text-sm">
+                <span>IVA ({{ "%.0f"|format(factura[6]*100) }}%):</span>
+                <span>C$ {{ "%.2f"|format(factura[7]) }}</span>
+            </div>
+            <div class="flex justify-between py-3 text-xl font-bold text-gray-800 border-b-2 border-gray-800">
+                <span>Total:</span>
+                <span>C$ {{ "%.2f"|format(factura[8]) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 flex justify-between items-center">
+        <a href="{{ url_for('facturacion.lista') }}" class="text-blue-600 hover:underline">← Volver al historial</a>
+        
+        {% if factura[9] == 'Emitida' %}
+        <form method="POST" action="{{ url_for('facturacion.anular', factura_id=factura[0]) }}" class="flex items-center gap-2" onsubmit="return confirm('¿Está seguro de anular esta factura? El stock será devuelto.');">
+            <input type="text" name="motivo_anulacion" placeholder="Motivo de anulación (obligatorio)" required minlength="5" class="border-gray-300 border p-2 rounded-md text-sm w-64">
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow transition text-sm font-semibold">Anular Factura</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

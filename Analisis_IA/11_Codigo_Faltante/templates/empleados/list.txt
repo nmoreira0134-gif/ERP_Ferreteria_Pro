@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">👥 Nómina de Empleados</h2>
+    <a href="{{ url_for('empleados.crear') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded shadow transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Nuevo Empleado
+    </a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="mb-4 p-3 rounded {{ 'bg-green-100 text-green-800' if category == 'success' else 'bg-red-100 text-red-800' }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Puesto</th>
+                <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Salario</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for emp in empleados %}
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emp.EmpleadoID }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ emp.Nombre }}</td>
+                <!-- Usamos la relación del modelo para traer el nombre del puesto -->
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ emp.puesto.Nombre if emp.puesto else 'Sin puesto' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-emerald-600 font-bold">C$ {{ "%.2f"|format(emp.SalarioBase) if emp.SalarioBase else '0.00' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{{ emp.FechaContratacion.strftime('%d/%m/%Y') if emp.FechaContratacion else 'N/A' }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                    {% if emp.Activo %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Activo</span>
+                    {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactivo</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No hay empleados registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

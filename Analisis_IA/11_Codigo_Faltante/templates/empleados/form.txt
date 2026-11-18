@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">
+        {% if empleado %} Editar Empleado {% else %} Nuevo Empleado {% endif %}
+    </h1>
+
+    <div class="bg-white shadow-md rounded p-6">
+        <form method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Nombre Completo:</label>
+                <input type="text" name="nombre" value="{{ empleado.Nombre if empleado else '' }}" required class="shadow border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">ID del Puesto (Opcional):</label>
+                <input type="number" name="puesto_id" value="{{ empleado.PuestoID if empleado else '' }}" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Salario Base:</label>
+                    <input type="number" step="0.01" name="salario_base" value="{{ empleado.SalarioBase if empleado else '' }}" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Fecha Contratación:</label>
+                    <input type="date" name="fecha_contratacion" value="{{ empleado.FechaContratacion.strftime('%Y-%m-%d') if empleado and empleado.FechaContratacion else '' }}" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+                </div>
+            </div>
+
+            <div class="mb-6 flex items-center">
+                <input type="checkbox" name="activo" id="activo" {% if not empleado or empleado.Activo %}checked{% endif %} class="mr-2">
+                <label for="activo" class="text-gray-700 text-sm font-bold">Empleado Activo</label>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Guardar Empleado
+                </button>
+                <a href="{{ url_for('empleados.lista') }}" class="text-gray-600 hover:text-gray-800 font-medium">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

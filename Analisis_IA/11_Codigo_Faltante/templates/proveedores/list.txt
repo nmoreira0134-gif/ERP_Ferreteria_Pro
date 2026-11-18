@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Gestión de Proveedores</h1>
+        <a href="{{ url_for('proveedores.crear') }}" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow">
+            Nuevo Proveedor
+        </a>
+    </div>
+
+    <form method="GET" action="{{ url_for('proveedores.lista') }}" class="mb-4 flex">
+        <input type="text" name="busqueda" value="{{ busqueda }}" placeholder="Buscar proveedor..." class="border p-2 rounded-l w-full">
+        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded-r">Buscar</button>
+    </form>
+
+    <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+        <table class="min-w-full w-full table-auto">
+            <thead class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                <tr>
+                    <th class="py-3 px-6 text-left">ID</th>
+                    <th class="py-3 px-6 text-left">Nombre</th>
+                    <th class="py-3 px-6 text-left">Contacto</th>
+                    <th class="py-3 px-6 text-left">Teléfono</th>
+                    <th class="py-3 px-6 text-left">Email</th>
+                    <th class="py-3 px-6 text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for prov in proveedores %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ prov.ProveedorID }}</td>
+                    <td class="py-3 px-6 text-left">{{ prov.Nombre }}</td>
+                    <td class="py-3 px-6 text-left">{{ prov.Contacto or '-' }}</td>
+                    <td class="py-3 px-6 text-left">{{ prov.Telefono or '-' }}</td>
+                    <td class="py-3 px-6 text-left">{{ prov.Email or '-' }}</td>
+                    <td class="py-3 px-6 text-center">
+                        <div class="flex item-center justify-center space-x-2">
+                            <a href="{{ url_for('proveedores.editar', id=prov.ProveedorID) }}" class="text-blue-600 hover:text-blue-900 font-bold">Editar</a>
+                            <a href="{{ url_for('proveedores.eliminar', id=prov.ProveedorID) }}" class="text-red-600 hover:text-red-900 font-bold" onclick="return confirm('¿Eliminar proveedor?')">Eliminar</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+# ============================================================
+# Empaqueta código fuente como .txt preservando estructura
+# y genera un ZIP listo para subir a la conversación.
+# ============================================================
+
+# 1. Ubicarse en la raíz del proyecto
+cd "C:\Users\Nestor Moreira\Documents\ERP_Ferreteria_Pro"
+
+# 2. Carpeta destino
+$destino = "Analisis_IA\11_Codigo"
+if (Test-Path $destino) { Remove-Item $destino -Recurse -Force }
+New-Item -ItemType Directory -Path $destino -Force | Out-Null
+
+# 3. Archivos raíz como .txt
+Copy-Item "app.py"       "$destino\app.txt"       -ErrorAction SilentlyContinue
+Copy-Item "config.py"    "$destino\config.txt"    -ErrorAction SilentlyContinue
+Copy-Item "database.py"  "$destino\database.txt"  -ErrorAction SilentlyContinue
+
+# 4. models/*.py  ->  models/*.txt
+New-Item -ItemType Directory -Path "$destino\models" -Force | Out-Null
+Get-ChildItem "models\*.py" | ForEach-Object {
+    Copy-Item $_.FullName "$destino\models\$($_.BaseName).txt"
+}
+
+# 5. routes/*.py  ->  routes/*.txt
+New-Item -ItemType Directory -Path "$destino\routes" -Force | Out-Null
+Get-ChildItem "routes\*.py" | ForEach-Object {
+    Copy-Item $_.FullName "$destino\routes\$($_.BaseName).txt"
+}
+
+# 6. templates/**/*.html  ->  templates/**/*.txt (preserva subcarpetas)
+Get-ChildItem "templates" -Recurse -Filter "*.html" | ForEach-Object {
+    $rel = $_.FullName.Substring((Resolve-Path "templates").Path.Length + 1)
+    $relTxt = $rel -replace '\.html$', '.txt'
+    $outPath = Join-Path "$destino\templates" $relTxt
+    New-Item -ItemType Directory -Path (Split-Path $outPath) -Force | Out-Null
+    Copy-Item $_.FullName $outPath
+}
+
+# 7. Comprimir todo en un ZIP
+$zip = "Analisis_IA\11_Codigo.zip"
+if (Test-Path $zip) { Remove-Item $zip -Force }
+Compress-Archive -Path "$destino\*" -DestinationPath $zip -Force
+
+# 8. Resumen
+Write-Host ""
+Write-Host "=== LISTO ===" -ForegroundColor Green
+Write-Host "Carpeta: $destino"
+Write-Host "ZIP:     $zip"
+Write-Host ""
+Write-Host "Archivos generados:"
+Get-ChildItem $destino -Recurse -File | Select-Object FullName

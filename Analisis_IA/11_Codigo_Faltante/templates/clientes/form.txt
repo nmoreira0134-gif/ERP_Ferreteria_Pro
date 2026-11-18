@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">
+        {% if cliente %} Editar Cliente {% else %} Nuevo Cliente {% endif %}
+    </h1>
+
+    <div class="bg-white shadow-md rounded p-6">
+        <form method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Nombre Completo:</label>
+                <input type="text" name="nombre" value="{{ cliente.Nombre if cliente else '' }}" required class="shadow border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Teléfono:</label>
+                <input type="text" name="telefono" value="{{ cliente.Telefono if cliente else '' }}" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+                <input type="email" name="email" value="{{ cliente.Email if cliente else '' }}" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Género:</label>
+                <select name="genero" class="shadow border rounded w-full py-2 px-3 text-gray-700">
+                    <option value="">-- Seleccione --</option>
+                    <option value="M" {% if cliente and cliente.Genero == 'M' %}selected{% endif %}>Masculino (M)</option>
+                    <option value="F" {% if cliente and cliente.Genero == 'F' %}selected{% endif %}>Femenino (F)</option>
+                </select>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Guardar Cliente
+                </button>
+                <a href="{{ url_for('clientes.lista') }}" class="text-gray-600 hover:text-gray-800 font-medium">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Inventario de Productos (Stock Real)</h1>
+        <div class="space-x-2">
+            <a href="{{ url_for('productos.carga_masiva') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded shadow font-medium">
+                📥 Carga Masiva
+            </a>
+            <a href="{{ url_for('inventario.movimientos') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow font-medium">
+                Ver Kardex (Movimientos)
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+        <table class="min-w-full w-full table-auto">
+            <thead class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                <tr>
+                    <th class="py-3 px-6 text-left">ID</th>
+                    <th class="py-3 px-6 text-left">SKU</th>
+                    <th class="py-3 px-6 text-left">Nombre del Producto</th>
+                    <th class="py-3 px-6 text-center">Stock Calculado</th>
+                    <th class="py-3 px-6 text-center">U. Medida</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-600 text-sm font-light">
+                {% for prod in productos %}
+                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ prod.ProductoID }}</td>
+                    <td class="py-3 px-6 text-left">{{ prod.SKU }}</td>
+                    <td class="py-3 px-6 text-left">{{ prod.Nombre }}</td>
+                    <td class="py-3 px-6 text-center font-bold {% if dict_stock.get(prod.ProductoID, 0) <= 0 %}text-red-600{% else %}text-green-600{% endif %}">
+                        {{ dict_stock.get(prod.ProductoID, 0) }}
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                        <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">
+                            {{ prod.UnidadMedida or 'UND' }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

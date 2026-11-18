@@ -1,0 +1,5 @@
+95810e2 Actualizacion 18 nov ferreteria Bd
+9038027 Actualizacion 17 Nov 12:44 pm Ferreteria Bd
+21cdf1b Actualizacion 17 nov ferreteria bd con SQLAlkemy
+80c58b0 Actualizacion modulos models y routes Ferreteria
+534ecb1 version 1.0 Ferreteria-facturacion completo
